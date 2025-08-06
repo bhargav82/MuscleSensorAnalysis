@@ -1,10 +1,11 @@
 // External Libraries
 import { GoogleGenerativeAI } from '@google/generative-ai'
-const express = require('express');
-const cors = require('cors');
-const SerialPort = require('serialport');
-const { ReadlineParser } = require('@serialport/parser-readline');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import SerialPort from 'serialport';
+import { ReadlineParser  } from '@serialport/parser-readline';
+import dotenv from 'dotenv';
+dotenv.config();
 
 
 // Setup Express server
@@ -20,8 +21,11 @@ app.use(express.json());
 let emgData = [];
 let recording = false;
 
-const ai = new GoogleGenerativeAI({});
-const apiKey = process.env.apiKey;
+const apiKey = process.env.NEW_GEMINI_API_KEY;
+const ai = new GoogleGenerativeAI("AIzaSyC3huuErkJWPkb-WSbEXmxSdSvdlS3T5kQ");
+
+const model = ai.getGenerativeModel({model: "gemini-1.5-flash"})
+
 
 
 // SerialPort setup - to read in values (until a new line) from Arduino microcontroller through port
@@ -84,21 +88,24 @@ app.post('/stop', (request, response) =>
 app.post('/callGemini', async (request, response)  =>
 {
     // Follow Gemini docs to get a AI response and then return it
-    const aiAnswer = await ai.models.generateContent(
+
+    try
     {
-        model: "gemini-2.5-flash",
-        contents: ` I am a 20 year old who exercises 4-5x a week. I eat a strict diet, no sugar and only organic food.
+        const prompt = ` I am a 20 year old who exercises 4-5x a week. I eat a strict diet, no sugar and only organic food.
                     These are my emg results after placing on my forearm and squeezing a few times for a few seconds.
                     The data is has the time in ms with the first value being the starting point.
-                    The values are in mV. Please analyze this data and report an accurate response.` + JSON.stringify(emgData), 
-        config: {
-          thinkingConfig: {
-            thinkingBudget: 0, // Disables thinking
-          },
-        }
-      });
+                    The values are in mV. Please analyze this data and report an accurate response.` + JSON.stringify(emgData); 
+        
+        const aiAnswer = await model.generateContent(prompt);
+        
+        response.send(aiAnswer.response.text());
+    } 
+    catch (err)
+    {
+        console.log(err);
+    }
     
-    response.send(aiAnswer.text);
+    
 })
 
 
