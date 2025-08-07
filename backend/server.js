@@ -22,7 +22,7 @@ let emgData = [];
 let recording = false;
 
 const apiKey = process.env.NEW_GEMINI_API_KEY;
-const ai = new GoogleGenerativeAI("AIzaSyC3huuErkJWPkb-WSbEXmxSdSvdlS3T5kQ");
+const ai = new GoogleGenerativeAI(apiKey);
 
 const model = ai.getGenerativeModel({model: "gemini-1.5-flash"})
 
@@ -85,23 +85,27 @@ app.post('/stop', (request, response) =>
     response.json(emgData);
 })
 
+// Follow Gemini docs to get a AI response and then return it
 app.post('/callGemini', async (request, response)  =>
 {
-    // Follow Gemini docs to get a AI response and then return it
+
+    const {name , age, muscle} = request.body;
+    console.log("Backend Recieved: ", name, age, muscle);
 
     try
     {
-        const prompt = ` I am a 20 year old who exercises 4-5x a week. I eat a strict diet, no sugar and only organic food.
-                    These are my emg results after placing on my forearm and squeezing a few times for a few seconds.
+        const prompt = ` My name is ${name} and I am ${age} who exercises 4-5x a week. I eat a strict diet, no sugar and only 
+                    organic food. These are my EMG results after placing sensors on my ${muscle} and squeezing for a few seconds.
                     The data is has the time in ms with the first value being the starting point.
-                    The values are in mV. Please analyze this data and report an accurate response.` + JSON.stringify(emgData); 
+                    The values are in mV. Please analyze this data and report an accurate response. Answer in 3-4
+                    well thought out sentences.` + JSON.stringify(emgData); 
         
         const aiAnswer = await model.generateContent(prompt);
-        
         response.send(aiAnswer.response.text());
     } 
     catch (err)
     {
+        
         console.log(err);
     }
     
